@@ -1,4 +1,5 @@
 import random
+import sys
 
 def create_teams(nTmCnt):
     alphabeth = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'
@@ -15,7 +16,38 @@ def create_all_matches(teams):
             match = teams[i] + '-' + teams[k]
             match_list.append(match)
     
-    return match_list    
+    return match_list
+
+def fix_home_away(match_list, teams):
+    matches_home = {}
+    
+    lowest_home_count = 5
+
+    for x in range(16):
+
+      for team in teams:
+         matches_home[team] = 0
+
+      for match in match_list:
+         matches_home[match[0]] += 1
+      
+      lowest_home_count = 100
+      for team in matches_home:
+         if matches_home[team] < lowest_home_count:
+               lowest_home_count = matches_home[team]
+               lowest_home_team = team
+
+      for i in range(len(match_list)):
+         match = match_list[i]
+         if match[2] == lowest_home_team:
+               new_match = match[2] + '-' + match[0]
+               match_list[i] = new_match
+               break
+    print(matches_home)
+
+    return match_list
+        
+        
 
 def create_matchday(match_list,match_count,not_played):
     match_day = []
@@ -207,8 +239,11 @@ def create_schedule_file(match_order,nCrtCnt):
 def main(teamcount, courtcount):
     teams = create_teams(teamcount)
     match_list = create_all_matches(teams)
+    match_list = fix_home_away(match_list, teams)
     match_order = create_match_order(teams,match_list)
 
     create_schedule_file(match_order, courtcount)
 
-main(12,5)
+main(int(sys.argv[1]),int(sys.argv[2]))
+
+    
