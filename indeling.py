@@ -15,35 +15,12 @@ def create_all_matches(teams):
             match = teams[i] + '-' + teams[k]
             match_list.append(match)
     
-    return match_list
-
-# def create_matchday(match_list,match_count):
-#     match_day = []
-#     day_count = 0
-#     teams_matched = '*'
-
-#     for k in range(3):
-#         for i in range(len(match_list)):
-#             match = match_list[i]
-#             if match[0] in teams_matched:
-#                 match
-#             elif match[2] in teams_matched:
-#                 match            
-#             else:
-#                 match_day.append(match)
-#                 teams_matched += match
-#                 match_list[i] = '*'
-#                 day_count += 1
-#                 match_count += 1
-
-#             if day_count == 5:
-#                 return match_day, match_list, match_count
-            
-#     return match_day, match_list, match_count    
+    return match_list    
 
 def create_matchday(match_list,match_count,not_played):
     match_day = []
     teams_matched = '*'
+    random.shuffle(match_list)
 
     if len(not_played) == 2:
         combined_match = not_played[0] + '-' + not_played[1]
@@ -77,7 +54,13 @@ def create_matchday(match_list,match_count,not_played):
                         break
         
     elif len(not_played) == 1:
-        match_count
+      for i  in range(len(match_list)):
+            if not_played[0] in match_list[i]:
+               match_day.append(match_list[i])
+               teams_matched += match_list[i]
+               match_list[i] = '*'
+               match_count += 1                   
+               break
     elif len(not_played) == 0:
         match_count
 
@@ -122,7 +105,8 @@ def create_match_order(teams, match_list):
     for team_letter in teams:
         matches_played[team_letter] = 0
     match_count = 0
-    random.shuffle(match_list)  
+    random.shuffle(match_list)
+ 
 
     match_day = []
     teams_matched = '*'
@@ -138,21 +122,65 @@ def create_match_order(teams, match_list):
             teams_matched += match
             match_list[i] = '*'
             match_count += 1
-
         if len(match_day) == 5:
-            break  
+            break
+
+       
 
     not_played = teams.copy()
     
     for match in match_day:
         not_played.remove(match[0])
         not_played.remove(match[2])
+        matches_played[match[0]] += 1
+        matches_played[match[2]] += 1
+
+    if len(match_day) < 5:
+      for i in range(5-len(match_day)):
+         match_day.append(' - ')    
 
     match_order += match_day
 
-    while match_count < len(match_list):
-        match_day, match_list, match_count, not_played = create_matchday(match_list,match_count,not_played)
+    print(match_day)
+   
+
+    complete = False
+    while complete == False:
+        viable_day = False
+        while viable_day == False:
+            matches_played_copy = matches_played.copy()
+            match_list_copy = match_list.copy()
+
+            match_day, match_list, match_count, not_played = create_matchday(match_list,match_count,not_played)
+
+            for match in match_day:
+                  if match != ' - ':
+                     matches_played[match[0]] += 1
+                     matches_played[match[2]] += 1
+
+            least_played = 100
+            most_played = 0
+
+            for times_played in matches_played:
+                  if matches_played[times_played] > most_played:
+                     most_played = matches_played[times_played]
+
+                  if matches_played[times_played] < least_played:
+                     least_played = matches_played[times_played]
+
+            if most_played - least_played > 1:
+                  match_count -= 5
+                  matches_played = matches_played_copy.copy()
+                  match_list = match_list_copy.copy()
+            else:
+                  viable_day = True
+            if match_day[0] == ' - ':
+                complete = True
+                match_day = []      
+
         match_order += match_day
+        print(match_day)
+        print(least_played,most_played)
 
     return match_order
 
@@ -175,43 +203,6 @@ def create_schedule_file(match_order,nCrtCnt):
             line += ' -    '*(5-line_length)
             file.write(line)
 
-def check_file():
-    teams = create_teams(12)
-
-    correct_schedule = True
-    matches_played = {}
-
-    for team_letter in teams:
-        matches_played[team_letter] = 0
-
-    with open('ww_schedule.txt', 'r') as file:
-        most_played = 0 
-        for line in file:
-            teams = ''
-            line = line.replace('-','')
-            line = line.replace(' ','')
-            line = line.replace('\n','')
-            for team in line:
-                if team in teams:
-                    correct_schedule = False
-                else:
-                    teams += team
-                    matches_played[team] += 1
-
-            least_played = most_played
-            for times_played in matches_played:
-                if matches_played[times_played] > most_played:
-                    most_played = matches_played[times_played]
-
-                if matches_played[times_played] < least_played:
-                    least_played = matches_played[times_played]
-
-            if most_played - least_played > 1:
-                correct_schedule = False
-                print('false')
-
-    if correct_schedule == False:
-        main(12,5)
 
 def main(teamcount, courtcount):
     teams = create_teams(teamcount)
@@ -219,9 +210,5 @@ def main(teamcount, courtcount):
     match_order = create_match_order(teams,match_list)
 
     create_schedule_file(match_order, courtcount)
-    check_file()
 
 main(12,5)
-
-    
-
